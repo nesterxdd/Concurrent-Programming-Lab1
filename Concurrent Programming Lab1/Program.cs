@@ -11,8 +11,7 @@ namespace Concurrent_Programming_Lab1
     {
         static DataMonitor dataMonitor; //data monitor
         static ResultMonitor resultMonitor; //result monitor
-        static double filterThreshold = 10.0; //variable to filter results
-
+        static double filterThreshold = 50.0; //variable to filter results
         static void Main(string[] args)
         {
             string filePath = "IFU-2_NesterenkoY_L1_dat_1.json"; 
@@ -64,33 +63,83 @@ namespace Concurrent_Programming_Lab1
             while (true)
             {
                 DataEntry entry = dataMonitor.Remove();
-                if (entry == null) break; //exit if there is no data left
+                if (entry == null) break; // exit if there is no data left
 
-                //perform algorithm logic
-                double[,] matrix = GenerateMatrix(entry.MatrixSize, entry.Seed);                
-                double[,] transposedMatrix = TransposeMatrix(matrix);
-                double[,] resultMatrix = MultiplyMatrixByItself(transposedMatrix);
-                double sum = ComputeMatrixSum(resultMatrix);
+                // Generate matrix for the current entry
+                double[,] matrix = GenerateMatrix(entry.MatrixSize, entry.Seed);
 
-                //apply filter
-                if (sum > filterThreshold)
+                // Find the longest path sum in the matrix
+                double longestPathSum = FindLongestPathSum(matrix);
+              
+
+                // Apply filter
+                if (longestPathSum > filterThreshold)
                 {
-                    resultMonitor.Insert((entry.ID, sum));
+                    resultMonitor.Insert((entry.ID, longestPathSum));
                 }
             }
         }
 
+        /// <summary>
+        /// Function to find the longest path sum in a matrix
+        /// </summary>
+        static double FindLongestPathSum(double[,] matrix)
+        {
+            int rows = matrix.GetLength(0);
+            int cols = matrix.GetLength(1);
+            double maxPathSum = 0;
+
+            // Create a visited array
+            bool[,] visited = new bool[rows, cols];
+
+            // Start DFS from each cell in the matrix
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    maxPathSum = Math.Max(maxPathSum, DFS(matrix, visited, i, j));
+                }
+            }
+            return maxPathSum;
+        }
 
         /// <summary>
-        /// Function to load data from a JSON file into a dynamic list
+        /// Depth-first search to find the longest path sum
         /// </summary>
-        /// <param name="filePath"></param>
-        /// <returns></returns>
-        static List<DataEntry> LoadData(string filePath)
+        static double DFS(double[,] matrix, bool[,] visited, int x, int y)
         {
-            string json = File.ReadAllText(filePath);
-            return JsonSerializer.Deserialize<List<DataEntry>>(json);
+            // Check bounds
+            if (x < 0 || y < 0 || x >= matrix.GetLength(0) || y >= matrix.GetLength(1))
+                return 0;
+
+            // Mark the cell as visited
+            visited[x, y] = true;
+
+            double maxPath = 0;
+
+            // Explore all four possible directions
+            int[] dx = { 0, 1, 0, -1 }; // Right, Down, Left, Up
+            int[] dy = { 1, 0, -1, 0 };
+
+            for (int dir = 0; dir < 4; dir++)
+            {
+                int newX = x + dx[dir];
+                int newY = y + dy[dir];
+
+                // Only proceed if the new cell is within bounds and not visited
+                if (newX >= 0 && newY >= 0 && newX < matrix.GetLength(0) && newY < matrix.GetLength(1) && !visited[newX, newY])
+                {
+                    maxPath = Math.Max(maxPath, DFS(matrix, visited, newX, newY));
+                }
+            }
+
+            // Unmark the cell (backtracking)
+            visited[x, y] = false;
+
+            // Store the maximum path sum from this cell
+            return matrix[x, y] + maxPath;
         }
+
 
         /// <summary>
         /// Function to generate a matrix based on size and seed
@@ -107,74 +156,25 @@ namespace Concurrent_Programming_Lab1
             {
                 for (int j = 0; j < size; j++)
                 {
-                    matrix[i, j] = random.NextDouble();
+                    matrix[i, j] = random.NextDouble() * 10; // Values between 0 and 10
                 }
             }
             return matrix;
         }
 
-        /// <summary>
-        /// Function to multiply a matrix by itself
-        /// </summary>
-        /// <param name="matrix"></param>
-        /// <returns></returns>
-        static double[,] MultiplyMatrixByItself(double[,] matrix)
-        {
-            int size = matrix.GetLength(0);
-            double[,] result = new double[size, size];
-
-            for (int i = 0; i < size; i++)
-            {
-                for (int j = 0; j < size; j++)
-                {
-                    result[i, j] = 0;
-                    for (int k = 0; k < size; k++)
-                    {
-                        result[i, j] += matrix[i, k] * matrix[k, j];
-                    }
-                }
-            }
-            return result;
-        }
 
         /// <summary>
-        /// Function to compute the sum of matrix elements
+        /// Function to load data from a JSON file into a dynamic list
         /// </summary>
-        /// <param name="matrix"></param>
+        /// <param name="filePath"></param>
         /// <returns></returns>
-        static double ComputeMatrixSum(double[,] matrix)
+        static List<DataEntry> LoadData(string filePath)
         {
-            double sum = 0;
-            int size = matrix.GetLength(0);
-            for (int i = 0; i < size; i++)
-            {
-                for (int j = 0; j < size; j++)
-                {
-                    sum += matrix[i, j];
-                }
-            }
-            return sum;
+            string json = File.ReadAllText(filePath);
+            return JsonSerializer.Deserialize<List<DataEntry>>(json);
         }
 
-        /// <summary>
-        /// Function to transpose a matrix
-        /// </summary>
-        /// <param name="matrix"></param>
-        /// <returns></returns>
-        static double[,] TransposeMatrix(double[,] matrix)
-        {
-            int size = matrix.GetLength(0);
-            double[,] transposed = new double[size, size];
-            for (int i = 0; i < size; i++)
-            {
-                for (int j = 0; j < size; j++)
-                {
-                    transposed[j, i] = matrix[i, j];
-                }
-            }
-            return transposed;
-        }
-
+        
         /// <summary>
         /// Function to write results to a text file
         /// </summary>
