@@ -14,20 +14,23 @@ namespace Concurrent_Programming_Lab1
         static double filterThreshold = 50.0; //variable to filter results
         static void Main(string[] args)
         {
-            string filePath = "IFU-2_NesterenkoY_L1_dat_3.json"; 
-            List<DataEntry> dataEntries = LoadData(filePath);
+            string filePath3 = "IFU-2_NesterenkoY_L1_dat_3.json";
+            string filePath2 = "IFU-2_NesterenkoY_L1_dat_2.json";
+            string filePath1 = "IFU-2_NesterenkoY_L1_dat_1.json";
+            List<DataEntry> dataEntries = LoadData(filePath1);
             int n = dataEntries.Count;
 
             int monitorCapacity = n / 2;
-          
+
 
             //initialize monitors
-            dataMonitor = new DataMonitor(monitorCapacity); //initializing data monitor with monitorCapacity 
+            dataMonitor = new DataMonitor(1); //initializing data monitor with monitorCapacity 
             resultMonitor = new ResultMonitor(n); //initializing result monitor with n capacity which is size of data entries
-           
-            int threadCount = Math.Max(2, n / 4); //number of worker threads (2 ≤ x ≤ n/4)
 
-            
+            //int threadCount = Math.Max(2, n / 4); //number of worker threads (2 ≤ x ≤ n/4)
+            int threadCount = 2; //check for speed with 1 thread
+
+
 
             //start worker threads
             Thread[] workerThreads = new Thread[threadCount];
@@ -70,7 +73,8 @@ namespace Concurrent_Programming_Lab1
 
                 // Find the longest path sum in the matrix
                 double longestPathSum = FindLongestPathSum(matrix);
-              
+                Thread.Sleep(200);
+
 
                 // Apply filter
                 if (longestPathSum > filterThreshold)
@@ -94,6 +98,7 @@ namespace Concurrent_Programming_Lab1
 
             // Create a visited array
             bool[,] visited = new bool[rows, cols];
+
 
             // Start DFS from each cell in the matrix
             for (int i = 0; i < rows; i++)
@@ -193,7 +198,7 @@ namespace Concurrent_Programming_Lab1
         {
             using (StreamWriter writer = new StreamWriter(filePath))
             {
-                if(resultMonitor.count == 0)
+                if (resultMonitor.count == 0)
                 {
                     writer.WriteLine("No results found");
                     return;
@@ -202,10 +207,9 @@ namespace Concurrent_Programming_Lab1
                 writer.WriteLine(new string('-', 47));
                 writer.WriteLine("|{0,-10}|{1,-12}|{2,-8}|{3,-12}|", "ID", "MatrixSum", "Seed", "Matrix Size");
                 writer.WriteLine(new string('-', 47));
+                var results = resultMonitor.GetResults(resultMonitor.count);
                 for (int i = 0; i < resultMonitor.count; i++)
                 {
-                    var results = resultMonitor.GetResults(resultMonitor.count);
-                    //writer.WriteLine($"{results[i].ID}\t{results[i].MatrixSum:F2}");
                     writer.WriteLine("|{0,-10}|{1,-12:f2}|{2,-8:f2}|{3,-12}|", results[i].ID, results[i].MatrixSum, results[i].Seed, results[i].MatrixSize);
                 }
                 writer.WriteLine(new string('-', 47));

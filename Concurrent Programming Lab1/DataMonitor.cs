@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 namespace Concurrent_Programming_Lab1
 {
     class DataMonitor
-    {
+    { 
+
         private DataEntry[] data;
         private int count;
         private readonly object lockObject = new object();
@@ -57,11 +58,6 @@ namespace Concurrent_Programming_Lab1
         public int GetCount()
         {
             return count;
-        }
-
-        public void SetCount(int newCount)
-        {
-            count = newCount;
         }
 
         public void MarkAsComplete()
